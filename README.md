@@ -1,7 +1,9 @@
-# Elizade Service Board
+# Elizade Dashboard (Service Board)
 
 Public showroom / service-centre display for the digital service price book.
 **No sign-in** — anyone can view published prices and the service catalogue.
+
+**Repository:** [ELISADE-X-TOYOTA/Elizade-dashboard](https://github.com/ELISADE-X-TOYOTA/Elizade-dashboard)
 
 Staff import, interval configuration, and maintenance queues use the existing
 admin portal and `/api/v1/admin/service/*` (JWT required).
