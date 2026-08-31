@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { KioskHeader } from '../components/KioskHeader'
 import { formatNaira, getPublishedBoard, listServiceItems } from '../api/client'
 import type { PriceBookBoard, ServiceItem } from '../api/types'
@@ -18,6 +18,15 @@ const DEFAULT_DISCLAIMER =
 const MODEL_ROTATE_SECONDS = 25
 /** After a manual tab pick, resume auto-rotation after this many seconds. */
 const MANUAL_PAUSE_SECONDS = 120
+/**
+ * How often to re-read the published board.
+ *
+ * This screen is mounted on a wall and never reloaded by hand. Without a poll,
+ * publishing new prices from Elizade Connect would change nothing until someone
+ * walked over and refreshed the browser — so the board would quietly go on
+ * showing last month's prices to customers.
+ */
+const REFRESH_MINUTES = 10
 
 function formatBand(km: number): string {
   return `${km.toLocaleString('en-NG')} km`
@@ -50,29 +59,55 @@ export function BoardPage() {
   const [rotationPaused, setRotationPaused] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  /** Whether a good board is on screen, readable from the long-lived poll closure. */
+  const hasBoard = useRef(false)
+
+  useEffect(() => {
+    hasBoard.current = board !== null
+  }, [board])
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      setLoading(true)
+
+    async function load({ isBackgroundRefresh }: { isBackgroundRefresh: boolean }) {
+      if (!isBackgroundRefresh) setLoading(true)
       try {
         const [book, catalogue] = await Promise.all([getPublishedBoard(), listServiceItems()])
         if (cancelled) return
         setBoard(book)
         setItems(catalogue)
-        setSelectedModel((current) => current || book.vehicleModels[0] || '')
+        // Hold the model currently on screen across a refresh, but fall back to
+        // the first if a republish dropped it — otherwise the tab stays lit on
+        // a model that has no prices and every cell reads as a dash.
+        setSelectedModel((current) =>
+          current && book.vehicleModels.includes(current) ? current : (book.vehicleModels[0] ?? ''),
+        )
         setError(null)
       } catch (err) {
         if (cancelled) return
+        // A background poll that fails leaves the good board on screen. A
+        // momentary network blip should not blank a showroom TV that is
+        // currently displaying correct prices. Read through the ref, not the
+        // `board` state: this closure is created once and would otherwise see
+        // the value from first render forever.
+        if (isBackgroundRefresh && hasBoard.current) return
         setBoard(null)
         setItems([])
         setError(err instanceof Error ? err.message : 'Unable to load price book')
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled && !isBackgroundRefresh) setLoading(false)
       }
-    })()
+    }
+
+    void load({ isBackgroundRefresh: false })
+    const id = window.setInterval(
+      () => void load({ isBackgroundRefresh: true }),
+      REFRESH_MINUTES * 60 * 1000,
+    )
+
     return () => {
       cancelled = true
+      window.clearInterval(id)
     }
   }, [])
 

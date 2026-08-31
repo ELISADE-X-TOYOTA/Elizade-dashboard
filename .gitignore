@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Personal overrides. .env.production and .env.example stay tracked — the kiosk
+# build needs the backend URL, and it is a public endpoint, not a secret.
+.env
+
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
