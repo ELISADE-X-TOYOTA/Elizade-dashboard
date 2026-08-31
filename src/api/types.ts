@@ -109,3 +109,69 @@ export type PriceImportPublish = {
   entryCount: number
   archivedPreviousVersionId: string | null
 }
+
+export type MaintenanceSummary = {
+  ownedVehicleId: string
+  customerId: string
+  customerName: string
+  customerPhone: string
+  customerEmail: string
+  vehicleLabel: string
+  model: string
+  currentMileage: number
+  worstStatus: string
+  dueSoonCount: number
+  overdueCount: number
+  notOnRecordCount: number
+  topReason: string | null
+}
+
+export type PaginatedMaintenance = {
+  items: MaintenanceSummary[]
+  total: number
+  page: number
+  size: number
+  pages: number
+}
+
+export type ItemMaintenanceStatus = {
+  serviceItemId: string
+  serviceItemCode: string
+  serviceItemName: string
+  serviceItemGroup: string
+  status: string
+  reason: string
+  dueAtKm: number | null
+  dueAt: string | null
+  mileageStale: boolean
+}
+
+export type VehicleMaintenance = {
+  ownedVehicleId: string
+  customerName: string
+  customerPhone: string
+  customerEmail: string
+  vehicleLabel: string
+  model: string
+  currentMileage: number
+  items: ItemMaintenanceStatus[]
+}
+
+export type ServiceInterval = {
+  id: string
+  serviceItemId: string
+  serviceItemCode: string
+  serviceItemName: string
+  vehicleModelId: string | null
+  vehicleModel: string | null
+  kind: string
+  intervalKm: number | null
+  intervalMonths: number | null
+  isActive: boolean
+}
+
+export type BoardSettings = {
+  dueSoonKm: number
+  dueSoonDays: number
+  mileageStaleDays: number
+}

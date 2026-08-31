@@ -89,11 +89,21 @@ export function OverviewPage() {
       </div>
 
       <section className="panel">
-        <h2>Phase 3 placeholders</h2>
+        <h2>Maintenance queues</h2>
         <p className="muted">
-          Due-soon vehicles, overdue vehicles, and the customer call list will appear here once
-          Elizade approves maintenance intervals and thresholds.
+          Due-soon, overdue, and call-list views require admin-configured intervals on catalogue items.
         </p>
+        <div className="stat-grid">
+          <article className="stat-card">
+            <Link to="/due-soon">Due soon →</Link>
+          </article>
+          <article className="stat-card">
+            <Link to="/overdue">Overdue →</Link>
+          </article>
+          <article className="stat-card">
+            <Link to="/call-list">Call list →</Link>
+          </article>
+        </div>
       </section>
     </div>
   )

@@ -1,13 +1,17 @@
 import type {
   AuthToken,
+  BoardSettings,
   PaginatedHistory,
+  PaginatedMaintenance,
   PriceBookBoard,
   PriceImportPreview,
   PriceImportPublish,
   PriceBookVersion,
   ServiceHistoryItem,
+  ServiceInterval,
   ServiceItem,
   UserProfile,
+  VehicleMaintenance,
 } from './types'
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? ''
@@ -188,4 +192,56 @@ export function formatNaira(value: string | number): string {
   const n = typeof value === 'string' ? Number(value) : value
   if (Number.isNaN(n)) return String(value)
   return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(n)
+}
+
+export function listDueSoon(token: string, page = 1): Promise<PaginatedMaintenance> {
+  return apiFetch(`/api/v1/admin/service/maintenance/due-soon?page=${page}`, {}, token)
+}
+
+export function listOverdue(token: string, page = 1): Promise<PaginatedMaintenance> {
+  return apiFetch(`/api/v1/admin/service/maintenance/overdue?page=${page}`, {}, token)
+}
+
+export function listCallList(token: string, page = 1): Promise<PaginatedMaintenance> {
+  return apiFetch(`/api/v1/admin/service/maintenance/call-list?page=${page}`, {}, token)
+}
+
+export function getVehicleMaintenance(token: string, id: string): Promise<VehicleMaintenance> {
+  return apiFetch(`/api/v1/admin/service/maintenance/vehicles/${id}`, {}, token)
+}
+
+export function listIntervals(token: string): Promise<ServiceInterval[]> {
+  return apiFetch('/api/v1/admin/service/maintenance/intervals', {}, token)
+}
+
+export function createInterval(
+  token: string,
+  body: {
+    serviceItemId: string
+    kind: string
+    intervalKm?: number
+    intervalMonths?: number
+    vehicleModelId?: string
+  },
+): Promise<ServiceInterval> {
+  return apiFetch('/api/v1/admin/service/maintenance/intervals', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }, token)
+}
+
+export function getBoardSettings(token: string): Promise<BoardSettings> {
+  return apiFetch('/api/v1/admin/service/maintenance/settings', {}, token)
+}
+
+export function updateBoardSettings(
+  token: string,
+  body: Partial<BoardSettings>,
+): Promise<BoardSettings> {
+  return apiFetch('/api/v1/admin/service/maintenance/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }, token)
 }

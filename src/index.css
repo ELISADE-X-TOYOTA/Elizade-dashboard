@@ -364,6 +364,39 @@ textarea {
   margin: 0.35rem 0 0;
 }
 
+.status-pill {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  text-transform: lowercase;
+}
+
+.status-current {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.status-due-soon {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.status-overdue {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.status-unknown {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-muted {
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;

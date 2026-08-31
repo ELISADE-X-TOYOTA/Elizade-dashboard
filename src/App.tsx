@@ -8,6 +8,9 @@ import { OverviewPage } from './pages/OverviewPage'
 import { PriceBookPage } from './pages/PriceBookPage'
 import { ServiceItemsPage } from './pages/ServiceItemsPage'
 import { UnmappedHistoryPage } from './pages/UnmappedHistoryPage'
+import { CallListPage, DueSoonPage, OverduePage } from './pages/MaintenanceQueuesPage'
+import { IntervalsPage } from './pages/IntervalsPage'
+import { VehicleDetailPage } from './pages/VehicleDetailPage'
 
 export default function App() {
   return (
@@ -22,6 +25,11 @@ export default function App() {
               <Route path="import" element={<ImportPage />} />
               <Route path="items" element={<ServiceItemsPage />} />
               <Route path="unmapped" element={<UnmappedHistoryPage />} />
+              <Route path="due-soon" element={<DueSoonPage />} />
+              <Route path="overdue" element={<OverduePage />} />
+              <Route path="call-list" element={<CallListPage />} />
+              <Route path="intervals" element={<IntervalsPage />} />
+              <Route path="vehicles/:id" element={<VehicleDetailPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

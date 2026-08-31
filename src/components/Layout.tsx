@@ -7,6 +7,10 @@ const links = [
   { to: '/import', label: 'Import & publish', adminOnly: true },
   { to: '/items', label: 'Service items' },
   { to: '/unmapped', label: 'Unmapped history' },
+  { to: '/due-soon', label: 'Due soon' },
+  { to: '/overdue', label: 'Overdue' },
+  { to: '/call-list', label: 'Call list' },
+  { to: '/intervals', label: 'Intervals', adminOnly: true },
 ]
 
 export function Layout() {
