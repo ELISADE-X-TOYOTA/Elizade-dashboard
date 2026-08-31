@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { formatNaira, getPublishedBoard } from '../api/client'
 import type { PriceBookBoard } from '../api/types'
-import { useAuth } from '../auth/AuthContext'
 
 export function PriceBookPage() {
-  const { token } = useAuth()
   const [board, setBoard] = useState<PriceBookBoard | null>(null)
   const [modelFilter, setModelFilter] = useState('')
   const [groupFilter, setGroupFilter] = useState('')
@@ -12,12 +10,11 @@ export function PriceBookPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!token) return
     let cancelled = false
     ;(async () => {
       setLoading(true)
       try {
-        const data = await getPublishedBoard(token)
+        const data = await getPublishedBoard()
         if (!cancelled) {
           setBoard(data)
           setError(null)
@@ -34,7 +31,7 @@ export function PriceBookPage() {
     return () => {
       cancelled = true
     }
-  }, [token])
+  }, [])
 
   const groups = useMemo(() => {
     if (!board) return []
@@ -96,7 +93,7 @@ export function PriceBookPage() {
       {error && !loading && (
         <section className="panel empty-state">
           <p>{error}</p>
-          <p className="muted">An admin can import and publish prices from the Import & publish page.</p>
+          <p className="muted">An admin can import and publish prices from the Elizade admin portal.</p>
         </section>
       )}
 
