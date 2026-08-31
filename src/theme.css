@@ -15,11 +15,7 @@
   --brand-text-secondary: #5c6470;
   --brand-text-tertiary: #666d79;
   --brand-accent-text: #7a5600;
-  --brand-success-text: #166534;
   --brand-error-text: #b91c1c;
-  --brand-warning-text: #92400e;
-  --brand-info-text: #1d4ed8;
-  --brand-overlay: rgba(0, 0, 0, 0.06);
 
   font-family: 'Outfit', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
