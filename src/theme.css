@@ -1,0 +1,28 @@
+/**
+ * Elizade Service Board — colours aligned with the mobile app
+ * (`Elizade-mobile-app/src/theme/colors.ts`, light theme).
+ */
+:root {
+  --brand-accent: #f5b301;
+  --brand-accent-dark: #d89a00;
+  --brand-on-accent: #1e1b00;
+  --brand-primary: #141a21;
+  --brand-canvas: #f5f6f8;
+  --brand-surface: #ffffff;
+  --brand-surface-alt: #f5f6f8;
+  --brand-border: #dfe3ea;
+  --brand-text-primary: #141a21;
+  --brand-text-secondary: #5c6470;
+  --brand-text-tertiary: #666d79;
+  --brand-accent-text: #7a5600;
+  --brand-success-text: #166534;
+  --brand-error-text: #b91c1c;
+  --brand-warning-text: #92400e;
+  --brand-info-text: #1d4ed8;
+  --brand-overlay: rgba(0, 0, 0, 0.06);
+
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  color: var(--brand-text-primary);
+  background: var(--brand-canvas);
+}

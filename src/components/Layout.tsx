@@ -11,10 +11,10 @@ export function Layout() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark">E</span>
+          <img src="/elizade-logo.png" alt="" className="brand-logo" width={40} height={40} />
           <div>
-            <strong>Service Board</strong>
-            <small>Elizade Connect</small>
+            <strong>Elizade</strong>
+            <small>Service Board</small>
           </div>
         </div>
         <nav>
