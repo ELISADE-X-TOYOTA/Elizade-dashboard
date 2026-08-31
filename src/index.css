@@ -33,7 +33,7 @@ body {
 .kiosk-header {
   background: var(--brand-primary);
   color: #f4f6f8;
-  padding: 1rem var(--kiosk-gutter);
+  padding: 1.25rem var(--kiosk-gutter);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -48,9 +48,9 @@ body {
 }
 
 .kiosk-logo {
-  height: 52px;
+  height: 88px;
   width: auto;
-  max-width: 140px;
+  max-width: 240px;
   object-fit: contain;
   display: block;
   flex-shrink: 0;
@@ -329,8 +329,8 @@ body {
   }
 
   .kiosk-logo {
-    height: 60px;
-    max-width: 168px;
+    height: 104px;
+    max-width: 300px;
   }
 }
 
