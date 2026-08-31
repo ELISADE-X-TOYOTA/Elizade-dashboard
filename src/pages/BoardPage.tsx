@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { KioskHeader } from '../components/KioskHeader'
 import { formatNaira, getPublishedBoard, listServiceItems } from '../api/client'
 import type { PriceBookBoard, ServiceItem } from '../api/types'
 
@@ -12,6 +13,11 @@ const GROUP_LABELS: Record<(typeof GROUP_ORDER)[number], string> = {
 
 const DEFAULT_DISCLAIMER =
   'Displayed prices are working estimates inclusive of labour, parts and tax and may vary according to the work actually performed.'
+
+/** Seconds each model stays on screen before auto-advancing (wall TV). */
+const MODEL_ROTATE_SECONDS = 25
+/** After a manual tab pick, resume auto-rotation after this many seconds. */
+const MANUAL_PAUSE_SECONDS = 120
 
 function formatBand(km: number): string {
   return `${km.toLocaleString('en-NG')} km`
@@ -41,6 +47,7 @@ export function BoardPage() {
   const [board, setBoard] = useState<PriceBookBoard | null>(null)
   const [items, setItems] = useState<ServiceItem[]>([])
   const [selectedModel, setSelectedModel] = useState('')
+  const [rotationPaused, setRotationPaused] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -69,6 +76,33 @@ export function BoardPage() {
     }
   }, [])
 
+  const models = board?.vehicleModels ?? []
+
+  useEffect(() => {
+    if (models.length < 2 || rotationPaused) return
+
+    const id = window.setInterval(() => {
+      setSelectedModel((current) => {
+        const idx = models.indexOf(current)
+        const next = idx >= 0 ? (idx + 1) % models.length : 0
+        return models[next] ?? current
+      })
+    }, MODEL_ROTATE_SECONDS * 1000)
+
+    return () => window.clearInterval(id)
+  }, [models, rotationPaused])
+
+  useEffect(() => {
+    if (!rotationPaused) return
+    const id = window.setTimeout(() => setRotationPaused(false), MANUAL_PAUSE_SECONDS * 1000)
+    return () => window.clearTimeout(id)
+  }, [rotationPaused, selectedModel])
+
+  function selectModel(model: string) {
+    setSelectedModel(model)
+    setRotationPaused(true)
+  }
+
   const priceByKey = useMemo(() => {
     if (!board || !selectedModel) return new Map<string, string>()
     const map = new Map<string, string>()
@@ -87,15 +121,7 @@ export function BoardPage() {
   if (loading) {
     return (
       <div className="kiosk">
-        <header className="kiosk-header">
-          <div className="kiosk-brand">
-            <img src="/elizade-logo.png" alt="" className="kiosk-logo" width={48} height={48} />
-            <div>
-              <h1>Elizade Service Board</h1>
-              <p>Periodic maintenance &amp; service prices</p>
-            </div>
-          </div>
-        </header>
+        <KioskHeader />
         <p className="kiosk-message muted">Loading prices…</p>
       </div>
     )
@@ -104,15 +130,7 @@ export function BoardPage() {
   if (error || !board) {
     return (
       <div className="kiosk">
-        <header className="kiosk-header">
-          <div className="kiosk-brand">
-            <img src="/elizade-logo.png" alt="" className="kiosk-logo" width={48} height={48} />
-            <div>
-              <h1>Elizade Service Board</h1>
-              <p>Periodic maintenance &amp; service prices</p>
-            </div>
-          </div>
-        </header>
+        <KioskHeader />
         <div className="kiosk-empty">
           <p className="kiosk-message">{error ?? 'No published price book yet'}</p>
           <p className="kiosk-message muted">Prices will appear here once published from Elizade Connect.</p>
@@ -126,30 +144,34 @@ export function BoardPage() {
 
   return (
     <div className="kiosk">
-      <header className="kiosk-header">
-        <div className="kiosk-brand">
-          <img src="/elizade-logo.png" alt="" className="kiosk-logo" width={48} height={48} />
-          <div>
-            <h1>Elizade Service Board</h1>
-            <p>Periodic maintenance &amp; service prices</p>
+      <KioskHeader
+        meta={
+          <div className="kiosk-meta">
+            <span className="kiosk-pill">
+              v{board.version.versionNumber}
+              {board.version.priceInclusive ? ' · VAT inclusive' : ''}
+            </span>
+            <span className="kiosk-clock">{clock}</span>
           </div>
-        </div>
-        <div className="kiosk-meta">
-          <span className="kiosk-pill">
-            v{board.version.versionNumber}
-            {board.version.priceInclusive ? ' · VAT inclusive' : ''}
-          </span>
-          <span className="kiosk-clock">{clock}</span>
-        </div>
-      </header>
+        }
+      />
 
-      <nav className="model-tabs" aria-label="Vehicle model">
+      <nav
+        className="model-tabs"
+        aria-label="Vehicle model"
+        style={{ ['--rotate-duration' as string]: `${MODEL_ROTATE_SECONDS}s` }}
+      >
         {board.vehicleModels.map((model) => (
           <button
             key={model}
             type="button"
-            className={model === selectedModel ? 'active' : undefined}
-            onClick={() => setSelectedModel(model)}
+            className={[
+              model === selectedModel ? 'active' : undefined,
+              model === selectedModel && !rotationPaused && models.length > 1 ? 'rotating' : undefined,
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            onClick={() => selectModel(model)}
           >
             {model}
           </button>
@@ -162,24 +184,37 @@ export function BoardPage() {
           if (rows.length === 0) return null
 
           const isPeriodic = group === 'periodic'
-          const bands = isPeriodic ? board.mileageBandsKm : []
+          const bands = board.mileageBandsKm
 
           return (
             <section key={group} className="board-section">
               <h2>{GROUP_LABELS[group]}</h2>
               <div className="table-scroll">
-                <table className={`board-table${isPeriodic ? '' : ' board-table-flat'}`}>
+                <table className="board-table">
+                  <colgroup>
+                    <col className="col-item" />
+                    {bands.map((band) => (
+                      <col key={band} className="col-price" />
+                    ))}
+                  </colgroup>
                   <thead>
                     <tr>
                       <th scope="col">Service item</th>
                       {isPeriodic ? (
                         bands.map((band) => (
-                          <th key={band} scope="col">
+                          <th key={band} scope="col" className="band-header">
                             {formatBand(band)}
                           </th>
                         ))
                       ) : (
-                        <th scope="col">Price</th>
+                        <>
+                          {bands.slice(0, -1).map((band) => (
+                            <th key={band} scope="col" className="band-header band-header-spacer" aria-hidden="true" />
+                          ))}
+                          <th scope="col" className="band-header">
+                            Price
+                          </th>
+                        </>
                       )}
                     </tr>
                   </thead>
@@ -197,12 +232,15 @@ export function BoardPage() {
                             )
                           })
                         ) : (
-                          <td className="price-cell">
-                            {(() => {
-                              const price = getPrice(item.code, 0)
-                              return price != null ? formatNaira(price) : '—'
-                            })()}
-                          </td>
+                          bands.map((band, index) => {
+                            const isPriceCol = index === bands.length - 1
+                            const price = isPriceCol ? getPrice(item.code, 0) : undefined
+                            return (
+                              <td key={band} className={`price-cell${isPriceCol ? ' price-cell-primary' : ' price-cell-empty'}`}>
+                                {price != null ? formatNaira(price) : ''}
+                              </td>
+                            )
+                          })
                         )}
                       </tr>
                     ))}
