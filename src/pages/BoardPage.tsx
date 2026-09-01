@@ -14,9 +14,15 @@ const GROUP_LABELS: Record<(typeof GROUP_ORDER)[number], string> = {
 const DEFAULT_DISCLAIMER =
   'Displayed prices are working estimates inclusive of labour, parts and tax and may vary according to the work actually performed.'
 
-/** Seconds each model stays on screen before auto-advancing (wall TV). */
-const MODEL_ROTATE_SECONDS = 25
-/** After a manual tab pick, resume auto-rotation after this many seconds. */
+/**
+ * Seconds each section holds the screen.
+ *
+ * Sixteen items do not fit a 1080p wall display — the Engine section, which
+ * carries the highest-value jobs, lands ~330px below the fold, and nobody
+ * scrolls a television. So one section is shown at a time and they rotate.
+ */
+const SECTION_ROTATE_SECONDS = 14
+/** After a manual tab pick, resume auto-advancing after this many seconds. */
 const MANUAL_PAUSE_SECONDS = 120
 /**
  * How often to re-read the published board.
@@ -56,7 +62,10 @@ export function BoardPage() {
   const [board, setBoard] = useState<PriceBookBoard | null>(null)
   const [items, setItems] = useState<ServiceItem[]>([])
   const [selectedModel, setSelectedModel] = useState('')
+  const [sectionIndex, setSectionIndex] = useState(0)
   const [rotationPaused, setRotationPaused] = useState(false)
+  /** Drives section advance imperatively — see the rotation effect. */
+  const sectionCursor = useRef(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   /** Whether a good board is on screen, readable from the long-lived poll closure. */
@@ -111,21 +120,44 @@ export function BoardPage() {
     }
   }, [])
 
-  const models = board?.vehicleModels ?? []
+  // Memoised so the rotation interval below is not torn down and restarted on
+  // unrelated renders — the clock ticks every 30s, and a restart there would
+  // reset the 14s section timer and strand a section on screen.
+  const models = useMemo(() => board?.vehicleModels ?? [], [board])
+
+  /** Only sections that actually have rows — an empty one must not eat a turn. */
+  const visibleGroups = useMemo(
+    () => GROUP_ORDER.filter((group) => items.some((item) => item.group === group)),
+    [items],
+  )
+
+  const activeGroup = visibleGroups[Math.min(sectionIndex, visibleGroups.length - 1)]
+
+  /** A model holds the screen for one full pass through its sections. */
+  const modelDwellSeconds = Math.max(1, visibleGroups.length) * SECTION_ROTATE_SECONDS
 
   useEffect(() => {
-    if (models.length < 2 || rotationPaused) return
+    if (visibleGroups.length === 0) return
 
     const id = window.setInterval(() => {
-      setSelectedModel((current) => {
-        const idx = models.indexOf(current)
-        const next = idx >= 0 ? (idx + 1) % models.length : 0
-        return models[next] ?? current
-      })
-    }, MODEL_ROTATE_SECONDS * 1000)
+      const next = (sectionCursor.current + 1) % visibleGroups.length
+      sectionCursor.current = next
+      setSectionIndex(next)
+
+      // Sections keep turning even while a manually picked model is held, so a
+      // customer who taps their car still sees all three of its sections. Only
+      // the move to the NEXT car is suspended — and it happens on the wrap, so
+      // no model is ever advanced past a section it has not shown.
+      if (next === 0 && !rotationPaused && models.length > 1) {
+        setSelectedModel((current) => {
+          const idx = models.indexOf(current)
+          return models[(idx >= 0 ? idx + 1 : 0) % models.length] ?? current
+        })
+      }
+    }, SECTION_ROTATE_SECONDS * 1000)
 
     return () => window.clearInterval(id)
-  }, [models, rotationPaused])
+  }, [visibleGroups, models, rotationPaused])
 
   useEffect(() => {
     if (!rotationPaused) return
@@ -135,6 +167,16 @@ export function BoardPage() {
 
   function selectModel(model: string) {
     setSelectedModel(model)
+    setRotationPaused(true)
+    // Deliberately does NOT reset the section: tapping a car means "show me
+    // this one", not "start me over".
+  }
+
+  function selectSection(index: number) {
+    sectionCursor.current = index
+    setSectionIndex(index)
+    // Hold the car too, so jumping to Engine does not immediately slide onto
+    // the next model mid-read.
     setRotationPaused(true)
   }
 
@@ -194,7 +236,7 @@ export function BoardPage() {
       <nav
         className="model-tabs"
         aria-label="Vehicle model"
-        style={{ ['--rotate-duration' as string]: `${MODEL_ROTATE_SECONDS}s` }}
+        style={{ ['--rotate-duration' as string]: `${modelDwellSeconds}s` }}
       >
         {board.vehicleModels.map((model) => (
           <button
@@ -213,8 +255,32 @@ export function BoardPage() {
         ))}
       </nav>
 
+      <nav
+        className="section-tabs"
+        aria-label="Board section"
+        style={{ ['--rotate-duration' as string]: `${SECTION_ROTATE_SECONDS}s` }}
+      >
+        {visibleGroups.map((group, index) => (
+          <button
+            key={group}
+            type="button"
+            className={[
+              group === activeGroup ? 'active' : undefined,
+              group === activeGroup && visibleGroups.length > 1 ? 'rotating' : undefined,
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-current={group === activeGroup ? 'true' : undefined}
+            onClick={() => selectSection(index)}
+          >
+            {GROUP_LABELS[group]}
+          </button>
+        ))}
+      </nav>
+
       <main className="kiosk-sections">
-        {GROUP_ORDER.map((group) => {
+        {visibleGroups.map((group) => {
+          if (group !== activeGroup) return null
           const rows = groupItems(items, group)
           if (rows.length === 0) return null
 
