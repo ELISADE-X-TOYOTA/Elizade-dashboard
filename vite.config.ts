@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
         // Dev requests stay same-origin and are forwarded server-side, so the
         // browser never makes a cross-origin call and CORS never applies. The
         // deployed backend is one env var away:
-        //   API_PROXY_TARGET=https://elizade-backend-api-production.up.railway.app npm run dev
+        //   API_PROXY_TARGET=https://elizade-backend-api-production-0daa.up.railway.app npm run dev
         '/api': {
           target: env.API_PROXY_TARGET || DEFAULT_TARGET,
           changeOrigin: true,
